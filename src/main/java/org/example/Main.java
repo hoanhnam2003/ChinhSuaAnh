@@ -51,9 +51,52 @@ public class Main {
     }
 
     public static BufferedImage histogramEqualization(BufferedImage img) {
-        // Cần cài đặt cho phép cân bằng Histogram
-        // Ở đây sẽ trả về ảnh gốc cho ví dụ
-        return img; // Trả về ảnh gốc cho ví dụ
+        int width = img.getWidth();
+        int height = img.getHeight();
+
+        BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+        // Tính toán histogram cho từng kênh màu
+        int[][] hist = new int[3][256];
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                Color pixel = new Color(img.getRGB(x, y));
+                hist[0][pixel.getRed()]++;
+                hist[1][pixel.getGreen()]++;
+                hist[2][pixel.getBlue()]++;
+            }
+        }
+
+        // Tính toán histogram tích lũy
+        int[][] cumulativeHist = new int[3][256];
+        for (int i = 0; i < 3; i++) {
+            cumulativeHist[i][0] = hist[i][0];
+            for (int j = 1; j < 256; j++) {
+                cumulativeHist[i][j] = cumulativeHist[i][j - 1] + hist[i][j];
+            }
+        }
+
+        // Tính toán LUT (lookup table) để cân bằng histogram
+        int totalPixels = width * height;
+        int[][] lut = new int[3][256];
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 256; j++) {
+                lut[i][j] = Math.round((float) cumulativeHist[i][j] / totalPixels * 255);
+            }
+        }
+
+        // Áp dụng LUT cho từng kênh màu để tạo ra ảnh mới
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                Color pixel = new Color(img.getRGB(x, y));
+                int red = lut[0][pixel.getRed()];
+                int green = lut[1][pixel.getGreen()];
+                int blue = lut[2][pixel.getBlue()];
+                result.setRGB(x, y, new Color(red, green, blue).getRGB());
+            }
+        }
+
+        return result;
     }
 
     public static void main(String[] args) {
